@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sans-app
+  labels:
+    app: sans
+spec:
+  selector:
+    matchLabels:
+      app: sans
