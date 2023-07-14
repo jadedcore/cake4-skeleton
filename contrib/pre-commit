@@ -1,0 +1,27 @@
+#!/bin/sh
+#############################################################
+# Place this file in .git/hooks give it permission          #
+# 775 and it will lint and run PHPCS before every commit.   #
+# If the result of the checks is a failure then your commit #
+# will be rejected.					    					#
+# You may skip the checks with `git commit --no-verify`.    #
+#############################################################
+echo "Running pre-commit hook."
+phpfiles=$(git diff --cached --name-only --diff-filter=ACM $against | grep '\.php$')
+cd $(dirname $0) && cd ../../
+[[ $(docker-compose -f docker/docker-compose.yml ps | grep app | wc -l) == *"0" ]] &&
+echo "App must be running...Aborted" && exit 1
+cd $(dirname $0)/../../
+
+
+if [ "$phpfiles" ]; then
+	filelist=''
+	for file in $phpfiles; do
+		file=$(echo $file | sed 's/.*app\///')
+		filelist="$filelist $file"
+		./toolkit.sh compose exec -T "php -l -d display_errors=0 $file"
+		[[ $? != 0 ]] && exit 1
+	done
+	./toolkit.sh phpcs $filelist
+	[[ $? != 0 ]] && exit 1 || echo "Coding Standards Passed!"
+fi
