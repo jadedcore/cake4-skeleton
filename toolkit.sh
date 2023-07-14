@@ -3,7 +3,6 @@
 
 cd $(dirname $0)
 
-
 DOCKER_COMPOSE_EXEC=docker-compose
 DOCKER_COMPOSE_LOCATION=docker/docker-compose.yml
 DOCKER_COMPOSE_COMMAND="$DOCKER_COMPOSE_EXEC -f $DOCKER_COMPOSE_LOCATION"
@@ -73,11 +72,12 @@ generate_keys)
     ;;
 finish_deployment)
     $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "composer install"
-    $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "chown -R jenkins:docker ."
+    # $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "chown -R jenkins:docker ."
     $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "chmod 770 bin/*"
-    $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "chmod 770 vendor/bin/phpunit"
-    $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "php bin/createDatabases.php"
-    $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "./bin/phinxRunMigration.script"
+	./toolkit.sh pre-commit-install
+    # $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "chmod 770 vendor/bin/phpunit"
+    # $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "php bin/createDatabases.php"
+    # $DOCKER_COMPOSE_COMMAND exec app /bin/bash -c "./bin/phinxRunMigration.script"
     ;;
 pre-commit-install)
     if [ -f ".git/hooks/pre-commit" ]; then
@@ -85,10 +85,11 @@ pre-commit-install)
         mv .git/hooks/pre-commit .git/hooks/pre-commit.old
     fi
     cp contrib/pre-commit .git/hooks/pre-commit
+	chmod 755 .git/hooks/pre-commit
 
     diff contrib/pre-commit .git/hooks/pre-commit 2>&1 >/dev/null
     if [ $? -eq 0 ]; then
-        echo "Success!"
+        echo "Successfully Installed pre-commit hook."
     fi
     ;;
 --help)
@@ -125,7 +126,8 @@ fi
 # Check if pre-commit hook is installed
 diff contrib/pre-commit .git/hooks/pre-commit 2>&1 >/dev/null
 if [ $? -ne 0 ]; then
-    osascript -e "display notification \"run $0 pre-commit-install\" with title \"pre-commit hook missing or modifed\"" 2> /dev/null || \
+    osascript -e "display notification \"run $0 pre-commit-install\" with title \"pre-commit hook missing or modifed\""\
+	2> /dev/null || \
     echo "\n\n" \
     "\033[0;31;13mpre-commit hook missing or modifed!\033[0m\n" \
     "\033[0;31;13mrun $0 pre-commit-install\033[0m\n"
